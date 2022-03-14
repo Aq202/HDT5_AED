@@ -1,15 +1,16 @@
 import simpy as sp
 import random
 import numpy as np
+import pyperclip
 
 
 class OperativeSystem:
 
-    def __init__(self, env, tasksExecutionCapacity=3):
+    def __init__(self, env, ramCapacity=100, tasksExecutionCapacity=3, cpuNumber=1):
 
         self.env = env
-        self.ram = sp.Container(env, init=100, capacity=100)
-        self.cpu = sp.Resource(env, capacity=1)
+        self.ram = sp.Container(env, init=ramCapacity, capacity=ramCapacity)
+        self.cpu = sp.Resource(env, capacity=cpuNumber)
         self.IO_operations = sp.Resource(env, capacity=1)
         self.tasksExecutionCapacity = tasksExecutionCapacity
         self.executionsRecord = []
@@ -65,20 +66,30 @@ class OperativeSystem:
 if __name__ == "__main__":
 
     random.seed(2002)
-    env = sp.Environment()
-    OS = OperativeSystem(env)
-    NUMBER_OF_PROCESSES = 50
+
+    NUMBER_OF_PROCESSES = 25
     INTERVAL = 1
-    executionStart = 0
+    RAM = 100
+    TASK_EXECUTION_CAPACITY = 3
+    CPU_NUMBER = 1
+
+    env = sp.Environment()
+    OS = OperativeSystem(
+        env, ramCapacity=RAM, tasksExecutionCapacity=TASK_EXECUTION_CAPACITY, cpuNumber=CPU_NUMBER)
 
     for i in range(NUMBER_OF_PROCESSES):
+        executionStart = random.expovariate(1.0 / INTERVAL)
         env.process(OS.newProcess(
             random.randint(1, 50), random.randint(1, 10), arrivalDelay=executionStart))
 
-        executionStart = executionStart + random.expovariate(1.0 / INTERVAL)
         print(f"exec start {executionStart}")
     env.run()
 
     print("\n----------SIMULACION FINALIZADA----------\n")
-    print(f"Tiempo promedio de ejecucion = {np.mean(OS.executionsRecord)}")
-    print(f"Desviacion estandar = {np.std(OS.executionsRecord)}")
+    mean = np.mean(OS.executionsRecord)
+    desv = np.std(OS.executionsRecord)
+
+    pyperclip.copy(f"{mean}\t{desv}")
+
+    print(f"Tiempo promedio de ejecucion = {mean}")
+    print(f"Desviacion estandar = {desv}")
